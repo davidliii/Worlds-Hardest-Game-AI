@@ -1,0 +1,155 @@
+* {
+  font-family: 'Raleway', sans-serif;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  background-color: #8283af;
+}
+
+.p5Canvas {
+  position: relative;
+  left: 1%;
+  padding: 5;
+  border: solid;
+  border-width: 2px;
+  margin-top: 20px;
+
+  background-color: white;
+}
+
+.userInput {
+  border: solid;
+  border-width: 2px;
+  border-color: black;
+  margin-top: 20px;
+  background-color: #cad6ff;
+  padding: 10px 10px;
+  height: 375;
+  transition-duration: 0.4s;
+}
+
+.userInput:hover {
+  background-color: white;
+}
+
+.button1 {
+  background-color: #4971f5;
+  color: white;
+  padding: 8px 10px;
+
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+
+  border: 2px solid #4971f5;
+  border-radius: 5px;
+
+  transition-duration: 0.3s;
+  letter-spacing: 0px;
+  display: block;
+  margin-top: 0px;
+  margin-bottom: 6px;
+}
+
+.button1:hover {
+  color: #4971f5;
+  background-color: white;
+  cursor: pointer;
+  box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+}
+
+.selector1 {
+  background-color: #9ab2ff;
+  color: white;
+  padding: 2px 5px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+
+  border: 2px solid #9ab2ff;
+  border-radius: 2px;
+
+  font-size: 16px;
+  transition-duration: 0.3s;
+}
+
+.selector1:hover {
+  color: #223b8b;
+  background-color: white;
+  cursor: pointer;
+  box-shadow: 0px 5px 15px rgba(0,0,0,0.2);  
+}
+
+.ballRotateRadiusSetter {
+  background-color: #4971f5;
+  color: white;
+  padding: 2px 2px;
+  border: 2px solid #4971f5;
+  border-radius: 5px;
+}
+
+.textInput {
+  width: 40px;
+}
+
+.checkbox {
+  cursor: pointer;
+}
+
+.verticalSpace {
+  padding: 20px;
+}
+
+.button2 {
+  background-color: #4971f5;
+  color: white;
+  padding: 8px 10px;
+
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+
+  border: 2px solid #4971f5;
+  border-radius: 5px;
+
+  transition-duration: 0.3s;
+  letter-spacing: 0px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.button2:hover {
+  color: #4971f5;
+  background-color: white;
+  cursor: pointer;
+  box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+}
+
+.instructions {
+  border: solid;
+  border-width: 2px;
+  border-color: black;
+
+  margin-top: 30px;
+  padding: 10px;
+  background-color: #4971f5;
+  word-wrap: normal;
+
+  color: white;
+  transition-duration: 0.3s;
+}
+
+.instructions:hover {
+  background-color: #304ca8;
+}
+
+.checkbox {
+  transform: scale(1.3);
+}

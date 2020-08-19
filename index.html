@@ -1,0 +1,109 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Worlds Hardest Game Remake</title>
+        <link rel="stylesheet" href="styles.css">
+        <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100;300;400&display=swap" rel="stylesheet">    </head>
+
+    <body>
+        <div class="sidebar">
+            <div class='userInput'>
+                <button onclick="toggleEdit()" id='editButton' class='button1' type="button">Edit current level</button>
+                <button onclick="toggleSave()" id='saveButton' class='button1' type="button">Save Level</button>
+                <select name="ballType" class='selector1' id="ballTypeSelect">
+                    <option value="vertical">Vertical Ball</option>
+                    <option value="horizontal">Horizontal Ball</option>
+                    <option value="cw">Clockwise Ball</option>
+                    <option value="ccw">Counter-clockwise Ball</option>
+                </select>
+    
+                <div class='ballRotateRadiusSetter'>
+                    <label class='label' for="ballRadius">Rotate Radius: </label>
+                    <input class='textInput' type="text" id="ballRadiusInput" name="ballRadius" value=0>
+                </div>
+    
+                <div class='verticalSpace'></div>
+    
+                <div class='toggleEnvironmentFeatures'>
+                    <input onchange="toggleEnvironmentFeatures()" id='environmentFeaturesCheckbox' class="checkbox" type="checkbox">
+                    <label class='label'>Show Environment Features</label>
+                </div>
+    
+                <div class='togglePlayerFeatures'>
+                    <input onchange="togglePlayerFeatures()" id='playerFeaturesCheckbox' class="checkbox" type="checkbox">
+                    <label class='label'>Show Player Features</label>
+                </div>
+    
+                <div class='verticalSpace'></div>
+    
+                <button onclick="resetGame()" id='resetGameButton' class='button1' type="button">Reset Game State</button>
+    
+                <span>
+                    <select name="levelSelect" class='selector1' id="levelSelect">
+                        <option value="level1">Level 1</option>
+                        <option value="level2">Level 2</option>
+                        <option value="level3">Level 3</option>
+                        <option value="level4">Level 4</option>
+                        <option value="level5">Level 5</option>
+                        <option value="level6">Level 6</option>
+                        <option value="level7">Level 7</option>
+                        <option value="level8">Level 8</option>
+                        <option value="level9">Level 9</option>
+                        <option value="level10">Level 10</option>
+                    </select>
+                    <button onclick="setLevel()" id='setLevelButton' class='button2' type="button">Set to this level</button>
+                </span>            
+            </div>
+
+            <div class="instructions">
+                <h1>How to make a level</h1>
+                <p>
+                    Click "edit current level" button and use number keys to assign tiles <br>
+                    1 - set as Home tile <br>
+                    2 - set as Board tile <br>
+                    3 - set as Goal tile <br>
+                    4 - set as Background tile <br>
+                    5 - set all to background <br> <br>
+                    p - set player location <br>
+                    b - set ball location with selected options <br>
+                    f - set food location <br>
+                </p>
+            </div>
+
+            <div class="userInput">
+                <h1>AI mode</h1>
+                <div class='AISizeSetter'>
+                    <label class='label' for="AISize">AI Generation Size: </label>
+                    <input class='textInput' type="text" id="AISize" name="AISize" value=0>
+                </div>
+                <button onclick="setupAI()" id='AIButton' class='button1' type="button">START AI</button>
+                <button onclick="makeNextGeneration()" id='makeGenButton' class='button1' type="button">Make Next Gen</button>
+            </div>
+        </div>
+        
+        
+        <div class='game'>
+            <script src='./libraries/p5.js'></script>
+            
+            <script src='utils.js'></script>
+            <script src='edit.js'></script>
+            <script src='user_input.js'></script>
+            <script src='sketch.js'></script>
+            <script src='game.js'></script>
+            <script src='player.js'></script>
+            <script src='player_feature_extractor.js'></script>
+            <script src='tile.js'></script>
+            <script src='food.js'></script>
+            <script src='ball.js'></script>
+            <script src='globals.js'></script>
+
+            <script src='NEAT/connection.js'></script>
+            <script src='NEAT/innovation.js'></script>
+            <script src='NEAT/network.js'></script>
+            <script src='NEAT/node.js'></script>
+            <script src='NEAT/population.js'></script>
+            <script src='NEAT/species.js'></script>
+            <script src='NEAT/utils.js'></script>
+        </div>
+    </body>
+</html>
