@@ -1,180 +1,392 @@
+/** 
+ * Class to contain members of the same species
+ * This is where the genetic algorithm mostly takes place
+ * (ie killing off lower-performing members, crossover, 
+ * mutation handling, etc.)
+ */
 class Species {
-    constructor() {
+    /**
+     * Creates the species. If a representative is provided, species
+     * is modeled after it.
+     * @param {Network} representative - Representative of the species
+     */
+    constructor(representative) {
+        this.recordFitness = 0;
+        this.numGenerationsSinceImprovement = 0
+
+        this.distanceThreshold = 3.0;
+        this.disjointCoefficient = 1.0;
+        this.excessCoefficient = 1.0;
+        this.matchingWeightDifferenceCoefficient = 0.4;
+        this.disableRate = 0.75;
+
         this.members = [];
-        this.highestFitness = 0;
-        this.numGenerationsSinceImprovement = 0;
+        this.champion = null;
+        this.representative = representative;
+
+        if (representative) {
+            this.members.push(representative);
+            this.champion = representative;
+        }
     }
 
-    createNextGeneration(speciesSize, disableRate) {
-        // if species has more than 5 members, keep the champion for the next generation
-        let newMembers = [];
-        if (this.members.length > 5) {
-            newMembers.push(this.getBestMember())
+    /**
+     * Sets the representative of this species and empties rest of this.members
+     * @returns {Network[]} - Remaining members of the species
+     */
+    prepareForSpeciation() {
+        let randomIdx = getRandomIntInclusive(0, this.members.length - 1);
+        this.representative  = this.members.splice(randomIdx, 1)[0]; // remove representative from members
+
+        let leftOver = [];
+        while (this.members.length) { // empty out rest of members
+            leftOver.push(this.members.pop())
         }
 
-        this.kill(); // kill off members
-
-        // repopulate until we meet the size quota
-        let maxParentIdx = this.members.length - 1;
-        while (newMembers.length < speciesSize) {
-            let parent1 = this.members[getRandomIntInclusive(0, maxParentIdx)];
-            let parent2 = this.members[getRandomIntInclusive(0, maxParentIdx)];
-
-            newMembers.push(this.crossParents(parent1, parent2, disableRate));
-        }
-
-        // assign new members of the species
-        this.members = newMembers;
+        this.members.push(this.representative) // reintroduce representative to members
+        this.setChampion();
+        return leftOver;
     }
 
-    kill() {
-        // remove bottom half of the species (if species has 5 or less members, do not kill)
-        let numMembers = this.members.length;
-        if (numMembers <= 5) {
-            return;
-        }
-
+    /**
+     * Removes the bottom performing members of the species
+     * If species has 5 of less members, then they all live
+     */
+    eliminateBadMembers() {
         this.sortMembers();
-        while (this.members.length > Math.floor(numMembers / 2)) {
+
+        if (this.members.length <= 5) return;
+
+        let numDesired = Math.ceil(this.members.length / 2);
+        while (this.members.length > numDesired) {
             this.members.pop();
         }
     }
 
-    getAdjustedFitness(f) {
-        return f / this.members.length;
-    }
+    /**
+     * Produces new members by crossing old members and adds them to the species 
+     * until the number of members in the population equals numMembers. 
+     * no reproduction occurs
+     */
+    repopulate(numMembers) {
+        let newMembers = [];
 
-    getSpeciesFitness() {
-        let fitness = 0;
-        for (let i = 0; i < this.members.length; i++) {
-            fitness += this.getAdjustedFitness(this.members[i].fitness);
+        // keep a copy of the champion
+        if (this.members.length >= 5) {
+            this.setChampion();
+            newMembers.push(this.champion);
         }
-        return fitness;
-    }
-
-    sortMembers() { // sort members in order of descending fitness
-        this.members.sort((a, b) => b.fitness - a.fitness);
-    }
-
-    getBestMember() {
-        let bestFitness = 0;
-        let bestMemberIdx = -1;
-
-        for (let i = 0; i < this.members.length; i++) {
-            if (this.members[i].fitness > bestFitness) {
-                bestFitness = this.members[i].fitness;
-                bestMemberIdx = i;
-            }
-        }
-
-        return bestMemberIdx != -1? this.members[bestMemberIdx] : null;
-    }
-
-    extractRandomMember() { // removes a random member from the species
-        let randomIdx = getRandomIntInclusive(0, this.members.length - 1);
-        return this.members.splice(randomIdx, 1)[0];
-    }
-
-    extractAllMembers() { // removes all members from species and returns them
-        let members = [];
         
-        while (this.members.length) {
-            members.push(this.members.pop());
+        let maxParentIdx = this.members.length - 1;
+
+        // 25% of next generation are mutated old members
+        while (newMembers.length < numMembers * 0.25) {
+            let child = this.members[getRandomIntInclusive(0, maxParentIdx)].clone();
+            child.mutateNetwork();
+            newMembers.push(child)
         }
-        return members;
+
+        while (newMembers.length < numMembers) {
+            let parent1 = this.members[getRandomIntInclusive(0, maxParentIdx)];
+            let parent2 = this.members[getRandomIntInclusive(0, maxParentIdx)];
+
+            let child = this.makeChild(parent1, parent2);
+            child.mutateNetwork();
+            newMembers.push(child);
+        }
+
+        this.members = newMembers;
+        this.setChampion();
     }
 
-    extractMember(member) { // removes a specific member from the species
+    /**
+     * Calculates the adjusted fitness of the entire species
+     */
+    getSpeciesFitness() {
+        let total = 0;
         for (let i = 0; i < this.members.length; i++) {
-            if (this.members[i] == member) {
-                return this.members.slice(i, 1);
-            }
+            total += this.members[i].fitness;
         }
-        return null;
+
+        return total / this.members.length;
     }
 
-    crossParents(p1, p2, disableRate) { // makes babies
-        p1.sortConnections(); p2.sortConnections();
-        [p1, p2] = p1.fitness > p2.fitness? [p1, p2] : [p2, p1]; // p1 represents more fit parent
-        let areParentsEquallyFit = p1.fitness == p2.fitness;
+    /**
+     * Produces a new member by crossing old members and adds it to the species
+     * @param {Network} parent1 - first parent
+     * @param {Network} parent2 - second parent
+     * @returns {Network} - child as a result of crossing parent 1 with parent 2
+     */
+    makeChild(parent1, parent2) {
+        let isFitnessEqual = parent1.fitness == parent2.fitness;
+        let betterParentIdx = parent1.fitness > parent2.fitness? 0 : 1;
 
-        let p1Idx = 0; // connection pointers
-        let p2Idx = 0;
-        let maxInnovation = p1.innovation.value - 1;
+        let matchingConnections = this.getMatchingConnections(parent1, parent2);
+        let disjointConnections = this.getDisjointConnections(parent1, parent2);
+        let excessConnections = this.getExcessConnections(parent1, parent2);
 
         let childConnections = [];
 
-        for (let i = 0; i <= maxInnovation; i++) {
-            if (p1.connections[p1Idx].innovationNumber == i && p2.connections[p2Idx].innovationNumber == i) { // matching gene
-                // choose random parent to inherit gene
-                let pConnection = getRandomBool()? p1.connections[p1Idx] : p2.connections[p2Idx];
-                
-                // random disable the gene if it is disabled in either parent
-                let isEnabled = true;
-                if (!p1.connections[p1Idx].enabled || !p2.connections[p2Idx].enabled) {
-                    if (Math.random() <= disableRate) isEnabled = false;
+        for (let i = 0; i < matchingConnections.length; i++) {
+            // inherit matching genes randomly
+            let connection = matchingConnections[i][getRandomIntInclusive(0, 1)].clone();
+            if (matchingConnections[i][0].enabled == false || matchingConnections[i][1].enabled == false) {
+                if (Math.random() <= this.disableRate) {
+                    connection.disable();
                 }
+            }
+            childConnections.push(connection);
+        }
 
-                childConnections.push(this.createChildConnection(pConnection, isEnabled)); // create and add child gene
-                p1Idx++; p2Idx++;
+        for (let i = 0; i < disjointConnections.length; i++) {
+            // always inherit disjoint connections from more fit parent
+            if (!isFitnessEqual) {
+                if (disjointConnections[i][betterParentIdx] != null) {
+                    childConnections.push(disjointConnections[i][betterParentIdx].clone());
+                }
             }
 
-            else if (p1.connections[p1Idx].innovationNumber == i || p2.connections[p2Idx].innovationNumber == i) { // disjoint/excess
-                let isP1 = p1.connections[p1Idx].innovationNumber == i? true : false; // flag
-                // inherit gene from the fitter parent (p1)
-                let shouldInherit = isP1;
-                // if parents are equally fit, then inherit randomly
-                if (areParentsEquallyFit) {
-                   shouldInherit = getRandomBool();
-                }
-
-                if (shouldInherit) {
-                    let pConnection = isP1? p1.connections[p1Idx] : p2.connections[p2Idx];
-                    let isEnabled = true;
-                    if (!pConnection.enabled) {
-                        if (Math.random() <= disableRate) isEnabled = false;
-                    }
-
-                    childConnections.push(this.createChildConnection(pConnection, isEnabled));
-                }
-
-                if (isP1) p1Idx++;
-                else p2Idx++;
-            }
-
-            else { // gene not present in either parent
-                p1Idx++; p2Idx++
+            // inherit randomly if parents have equal fitness
+            else {
+                let connection = disjointConnections[i][getRandomIntInclusive(0, 1)];
+                if (connection != null) childConnections.push(connection.clone());
             }
         }
 
-        let child = this.makeChild(childConnections, p1.innovation, p1.numInputs, p1.numOutputs);
-        return child;
-    }
+        for (let i = 0; i < excessConnections.length; i++) {
+            // always inherit disjoint connections from more fit parent
+            if (!isFitnessEqual) {
+                if (excessConnections[i][betterParentIdx] != null) {
+                    childConnections.push(excessConnections[i][betterParentIdx].clone());
+                }
+            }
 
-    createChildConnection(pConnection, isEnabled) { // creating a child connection
-        let cConnection = new Connection(pConnection.inNodeID, pConnection.outNodeID, pConnection.weight, pConnection.innovationNumber);
-        cConnection.enabled = isEnabled;
-        return cConnection;
-    }
+            // inherit randomly if parents have equal fitness
+            else {
+                let connection = excessConnections[i][getRandomIntInclusive(0, 1)];
+                if (connection != null) childConnections.push(connection.clone());
+            }
+        }
 
-    makeChild(childConnections, innovation, numInputs, numOutputs) {
-        let innovationValue = innovation.value;
-        let child = new Network(numInputs, numOutputs, innovation); // create network
-
+        // make nodes
+        let childNodeNumbers = [];
+        let childNodes = [];
         for (let i = 0; i < childConnections.length; i++) {
-            let inNodeID = childConnections[i].inNodeID;
-            let outNodeID = childConnections[i].outNodeID;
-
-            if (child.getNodeByID(inNodeID) == null) { // update the nodes
-                child.nodes.push(new Node(inNodeID));
+            if (!childNodeNumbers.includes(childConnections[i].inNodeID)) {
+                childNodeNumbers.push(childConnections[i].inNodeID);
+                childNodes.push(new Node(childConnections[i].inNodeID));
             }
-            if (child.getNodeByID(outNodeID) == null) {
-                child.nodes.push(new Node(outNodeID));
+
+            if (!childNodeNumbers.includes(childConnections[i].outNodeID)) {
+                childNodeNumbers.push(childConnections[i].outNodeID);
+                childNodes.push(new Node(childConnections[i].outNodeID));
             }
         }
-        innovation.value = innovationValue;
-        child.connections = childConnections; // update the connections
-        child.formatNetwork();
+
+        let child = new Network(parent1.numInputs, parent1.numOutputs, parent1.innovation);
+        child.inputNodes = [];
+        child.outputNodes = [];
+        child.biasNode = null;
+        child.nextNodeID = Math.max(...childNodeNumbers) + 1;
+
+        child.connections = childConnections;
+        child.nodes = childNodes;
+
+        for (let i = 0; i < child.nodes.length; i++) {
+            if (child.nodes[i].ID < child.numInputs) {
+                child.nodes[i].isInput = true;
+                child.inputNodes.push(child.nodes[i])
+            }
+
+            else if (child.nodes[i].ID < child.numInputs + child.numOutputs) {
+                child.nodes[i].isOutput = true;
+                child.outputNodes.push(child.nodes[i])
+            }
+
+            else if (child.nodes[i].ID == child.numInputs + child.numOutputs) {
+                child.nodes[i].isBias = true;
+                child.biasNode = child.nodes[i];
+            }
+        }
+
+        child.sortNodes();
+        child.sortConnections();
+
         return child;
+    }
+
+    /**
+     * Determines if input network is compatible with this species
+     * @param {Network} member - Member to be compared with species representative
+     * @returns {Boolean} - Whether or not member is compatible with species
+     */
+    isCompatible(member) {
+        let distance = this.calcDistance(member, this.representative);
+        return distance >= this.distanceThreshold? false : true;
+    }
+
+    /**
+     * Compute the genetic distance between two members
+     * @param {Network} member1 - First member
+     * @param {Network} member1 - Second member
+     * @returns {Number} - Distance between members
+     */
+    calcDistance(member1, member2) {
+        member1.sortConnections();
+        member2.sortConnections();
+
+        let numGenes = Math.max(member1.connections.length, member2.connections.length);
+        if (numGenes < 20) {
+            numGenes = 1;
+        }
+
+        let matchingConnections = this.getMatchingConnections(member1, member2);
+        let matchingWeightDifference = 0;
+        for (let i = 0; i < matchingConnections.length; i++) {
+            let weight1 = matchingConnections[i][0].weight;
+            let weight2 = matchingConnections[i][1].weight;
+            matchingWeightDifference += Math.abs(weight1 - weight2);
+        }
+
+        let numDisjoint = this.getDisjointConnections(member1, member2).length;
+        let numExcess = this.getExcessConnections(member1, member2).length;
+
+        return matchingWeightDifference * this.matchingWeightDifferenceCoefficient / numGenes + 
+        numDisjoint * this.disjointCoefficient + numExcess * this.excessCoefficient;
+    }
+
+    /**
+     * Get a list of matching connection pairs between two networks
+     * @param {Network} member1 - First member
+     * @param {Network} member1 - Second member
+     * @returns {[Connection, Connection] []} - List of matching connection pairs
+     */
+    getMatchingConnections(member1, member2) {
+        let matchingConnections = [];
+
+        let m1Idx = 0;
+        let m2Idx = 0;
+        let m1Bound = member1.connections.length;
+        let m2Bound = member2.connections.length;
+
+        while (true) {
+            let connection1 = member1.connections[m1Idx];
+            let connection2 = member2.connections[m2Idx];
+
+            if (connection1.innovationNumber == connection2.innovationNumber) {
+                matchingConnections.push([connection1, connection2]);
+                m1Idx++;
+                m2Idx++;
+            }
+
+            else if (connection1.innovationNumber > connection2.innovationNumber) {
+                m2Idx++;
+            }
+
+            else if (connection2.innovationNumber > connection1.innovationNumber) {
+                m1Idx++;
+            }
+
+
+            if (m1Idx >= m1Bound || m2Idx >= m2Bound) {
+                break;
+            }
+        }
+
+        return matchingConnections;
+    }
+
+    /**
+     * Get a list of excess connection pairs between two networks. One element in the pair will always be null
+     * @param {Network} member1 - First member
+     * @param {Network} member1 - Second member
+     * @returns {[Connection, Connection] []} - List of excess connection pairs
+     */
+    getExcessConnections(member1, member2) {
+        let member1MaxInnovation = member1.connections[member1.connections.length - 1].innovationNumber;
+        let member2MaxInnovation = member2.connections[member2.connections.length - 1].innovationNumber;
+
+        if (member1MaxInnovation == member2MaxInnovation) {
+            return [];
+        }
+
+        let threshold = Math.min(member1MaxInnovation, member2MaxInnovation);
+        let [idx, excessMember] = member1MaxInnovation > member2MaxInnovation? [0, member1] : [1, member2];
+
+        let excessConnections = [];
+        for (let i = excessMember.connections.length - 1; i >= 0; i--) {
+            if (excessMember.connections[i].innovationNumber > threshold) {
+                if (idx == 0) excessConnections.push([excessMember.connections[i], null])
+                else excessConnections.push([null, excessMember.connections[i]])
+            }
+
+            else {
+                break;
+            }
+        }
+        return excessConnections;
+    }
+
+    /**
+     * Get a list of disjoint connection pairs between two networks. One element in the pair will always be null
+     * @param {Network} member1 - First member
+     * @param {Network} member1 - Second member
+     * @returns {[Connection, Connection] []} - List of disjoint connection pairs
+     */
+    getDisjointConnections(member1, member2) {
+        let member1MaxInnovation = member1.connections[member1.connections.length - 1].innovationNumber;
+        let member2MaxInnovation = member2.connections[member2.connections.length - 1].innovationNumber;
+
+        let threshold = Math.min(member1MaxInnovation, member2MaxInnovation);
+        let disjointConnections = [];
+
+        for (let i = 0; i < member1.connections.length; i++) {
+            let innovationNumber = member1.connections[i].innovationNumber;
+            if (innovationNumber <= threshold) {
+                if (member2.getConnectionByInnovationNumber(innovationNumber) == null) {
+                    disjointConnections.push([member1.connections[i], null])
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        for (let i = 0; i < member2.connections.length; i++) {
+            let innovationNumber = member2.connections[i].innovationNumber;
+            if (innovationNumber <= threshold) {
+                if (member1.getConnectionByInnovationNumber(innovationNumber) == null) {
+                    disjointConnections.push([null, member2.connections[i]])
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        return disjointConnections;
+    }
+
+    /**
+     * Determines the champion of the species
+     */
+    setChampion() {
+        this.sortMembers();
+        if (this.members.length) this.champion = this.members[0];
+        else this.champion = null;
+    }
+
+    /**
+     * Sorts members in order of decreasing fitness
+     */
+    sortMembers() {
+        this.members.sort((a, b) => b.fitness - a.fitness);
+    }
+
+    /**
+     * Adds a member into the species
+     */
+    addMember(member) {
+        this.members.push(member);
     }
 }

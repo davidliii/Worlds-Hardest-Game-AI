@@ -165,11 +165,13 @@ class AIPlayer extends Player {
     }
 
     calculateFitness(game) {
-        let goalFitness = 6*Math.exp(-0.2 * (this.featureExtractor.goalPath.lenth)); // reward for getting close to goal
+        let goalFitness = 6*Math.exp(-0.2 * (this.featureExtractor.goalPath.length)); // reward for getting close to goal
         let foodFitness = game.food.length == 0? 1 : this.foodEaten / game.food.length; // reward for eating food
         let notInHomeFitness = this.currentTileType(game) != 'home'? 10 : 0; // reward for not in home
         let goalReachedFitness = this.currentTileType(game) == 'goal'? 10 : 0;
         let fitness = goalFitness + foodFitness + notInHomeFitness + goalReachedFitness;
+
+        console.log(goalFitness,foodFitness, notInHomeFitness, goalReachedFitness)
         return fitness;
     }
 

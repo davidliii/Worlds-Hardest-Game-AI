@@ -25,9 +25,7 @@ function draw() {
 
 function setupAI() {
     GAME.players = [];
-    innovation = new Innovation();
-    population = new Population(AISize, 12, 9, innovation);
-    population.flattenSpecies();
+    population = new NEAT(12, 9, AISize);
 
     for (let i = 0; i < population.members.length; i++) {
         GAME.players.push(new AIPlayer(...findAIStart(), population.members[i]))
@@ -45,15 +43,13 @@ function makeNextGeneration() {
         fitnessValues.push(GAME.players[i].calculateFitness(GAME))
     }
 
-    population.assignFitness(fitnessValues);
-
-    population.createNextGeneration();
-    population.flattenSpecies();
+    population.createNextGeneration(fitnessValues);
 
     GAME.players = [];
     for (let i = 0; i < population.members.length; i++) {
         GAME.players.push(new AIPlayer(...findAIStart(), population.members[i]))
     }
+
     GAME.resetGame();
 }
 

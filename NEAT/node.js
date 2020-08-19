@@ -1,18 +1,28 @@
+/** 
+ * Node class
+ */
 class Node {
+    /**
+     * Creates a node
+     * @param {Number} ID - Node number
+     */
     constructor(ID) {
         this.ID = ID;
         this.output = 0;
-        this.activation = this.identity; // testing
+        this.activation = this.modifiedSigmoid; // testing
 
-        // special parameters for input/output neurons
+        // special parameters for input/output neurons only
         this.isInput = false;
         this.isOutput = false;
         this.isBias = false;
-        this.InOutID = null;
     }
 
+    /**
+     * Sets the output of the node
+     * @param {Number} input - Input value
+     */
     activate(input) {
-        return this.activation(input);
+        this.output = this.activation(input);
     }
 
     // activation functions
@@ -38,5 +48,13 @@ class Node {
 
     modifiedSigmoid(x) { // phi function used in stantley's research paper
         return 1 / (1 + Math.exp(-4.9 * x));
+    }
+
+    clone() {
+        let node = new Node(this.ID);
+        node.isInput = this.isInput;
+        node.isOutput = this.isOutput;
+        node.isBias = this.isBias;
+        return node;
     }
 }

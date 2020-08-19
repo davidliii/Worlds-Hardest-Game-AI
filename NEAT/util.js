@@ -19,11 +19,6 @@ function getRandomBool() {
     }
 }
 
-// debugging
-function print(x) {
-    console.log(JSON.parse(JSON.stringify(x)));
-}
-
 function print_green(x) {
     console.log(JSON.parse(JSON.stringify('\033[32m' + x + '\033[39m')));
 }
@@ -35,4 +30,3 @@ function print_red(x) {
 function getFuncName() {
     return getFuncName.caller.name;
 }
-
