@@ -1,3 +1,6 @@
+/* Food class */
+
+// Food constant properties
 var FOOD_COLOR = '#FFFF00';
 var FOOD_SIZE = 25;
 var FOOD_STROKE = 4;
@@ -11,6 +14,7 @@ class Food {
         this.display = true;
     }
 
+    // display the food to the canvas
     show() {
         if (this.display) {
             let center = this.getCenter();
@@ -21,6 +25,8 @@ class Food {
         }
     }
 
+
+    // show the food whenever at least one player has not eaten it
     update(game) {
         if (this.numPlayersEaten == game.players.length && game.players.length != 0) {
             this.display = false;

@@ -1,4 +1,6 @@
 /* Various global parameters */
+
+// canvas settings
 var canvas_x = 1300;
 var canvas_y = 900;
 var max_x = Math.floor(canvas_x / TILE_SIZE);

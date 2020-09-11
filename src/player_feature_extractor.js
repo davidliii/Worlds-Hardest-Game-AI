@@ -1,3 +1,6 @@
+/**
+ * Feature extractor class that "sees" the environment the player is in
+ */
 class PlayerFeatureExtractor {
     constructor(player) {
         this.player = player;

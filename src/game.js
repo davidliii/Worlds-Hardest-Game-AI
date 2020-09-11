@@ -6,10 +6,9 @@ class Game {
         this.food = [];
         this.players = [];
         this.clearGame();
-
-        this.generation = 0;
     }
 
+    // draw the game and its elements to the canvas
     show() {
         background('#B4B5FE');
         for (let i = 0; i < this.tiles.length; i++) {
@@ -33,18 +32,21 @@ class Game {
         for (let i = 0; i < this.players.length; i++) this.players[i].show();
     }
 
+    // get changes for eahc element
     update() {
         for (let i = 0; i < this.balls.length; i++) this.balls[i].update(this);
         for (let i = 0; i < this.players.length; i++) this.players[i].update(this);
         for (let i = 0; i < this.food.length; i++) this.food[i].update(this);
     }
 
+    // reset the game to starting state
     resetGame() {
         for (let i = 0; i < this.balls.length; i++) this.balls[i].reset();
         for (let i = 0; i < this.players.length; i++) this.players[i].reset(this);
         for (let i = 0; i < this.food.length; i++) this.food[i].reset();
     }
 
+    // clear the game elements
     clearGame() {
         this.tiles = Array(max_x);
         for (let i = 0; i < max_x; i++) {

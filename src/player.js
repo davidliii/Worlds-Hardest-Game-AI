@@ -1,8 +1,14 @@
+/* Player classes */
+
+// constant player properties
 var PLAYER_SIZE = 30;
 var PLAYER_COLOR = '#FF0000';
 var PLAYER_SPEED = 0.075;
 var PLAYER_STROKE = 3;
 
+/**
+ * Generic player class
+ **/
 class Player {
     constructor(x, y) {
         this.x = x;
@@ -15,6 +21,7 @@ class Player {
         this.foodEaten = [];
     }
 
+    // draw the player to the canvas
     show() {
         if (!this.disable) {
             let center = this.getCenter();
@@ -30,27 +37,29 @@ class Player {
         }  
     }
 
+    // update the player based on user input and environmental changes
     update(game) {
         if (!this.disable) {
             this.featureExtractor.update(game);
 
-            let move = this.getMove();
-            if (this.isMoveValid([0, move[1]], game)) {
-                this.y += move[1] * PLAYER_SPEED;
-            }
+            let move = this.getMove(); // move the player (depends on player type)
 
             if (this.isMoveValid([move[0], 0], game)) {
                 this.x += move[0] * PLAYER_SPEED;
             }
-            
-            if (this.hasTouchedBall(game)) {
+            if (this.isMoveValid([0, move[1]], game)) {
+                this.y += move[1] * PLAYER_SPEED;
+            }
+
+            if (this.hasTouchedBall(game)) { // check if player is dead
                 this.runWhenDead(game);
             }
 
-            this.checkFoodTouched(game);
+            this.checkFoodTouched(game); // check if player obtained food
         }
     }
 
+    // determines if a move is valid on the board
     isMoveValid(singleDirectionMove, game) {
         let [top, left, bot, right] = this.getEdges();
 
@@ -88,6 +97,7 @@ class Player {
         return [top, left, bot, right];
     }
 
+    // reset to starting state
     reset(game) {
         this.x = this.spawnX;
         this.y = this.spawnY;
@@ -124,11 +134,15 @@ class Player {
     }
 }
 
+/**
+ * Human player class
+ */
 class HumanPlayer extends Player {
     constructor(x, y) {
         super(x, y);
     }
 
+    // gets move from arrow keys (allows diagonal movement)
     getMove() {
         let move = [0, 0];
         if (keyIsDown(up_arrow)) move[1] -= 1;
@@ -143,12 +157,16 @@ class HumanPlayer extends Player {
     }
 }
 
+/**
+ * AI player class
+ */
 class AIPlayer extends Player {
     constructor(x, y, network) {
         super(x, y);
         this.network = network;
     }
 
+    // moves are determined by evaluating the neural network
     getMove() {
         let input = this.featureExtractor.getFeatures();
         let moves = [[0, 0], 
@@ -164,18 +182,19 @@ class AIPlayer extends Player {
         this.disable = true;
     }
 
+    // fitness function
     calculateFitness(game) {
         let goalFitness = 6*Math.exp(-0.2 * (this.featureExtractor.goalPath.length)); // reward for getting close to goal
         let foodFitness = game.food.length == 0? 1 : this.foodEaten / game.food.length; // reward for eating food
         let notInHomeFitness = this.currentTileType(game) != 'home'? 10 : 0; // reward for not in home
-        let goalReachedFitness = this.currentTileType(game) == 'goal'? 10 : 0;
+        let goalReachedFitness = this.CurrentTileType(game) == 'goal'? 10 : 0;
         let fitness = goalFitness + foodFitness + notInHomeFitness + goalReachedFitness;
 
         console.log(goalFitness,foodFitness, notInHomeFitness, goalReachedFitness)
         return fitness;
     }
 
-    currentTileType(game) {
+    getCurrentTileType(game) {
         let [x, y] = this.getCenter();
         [x, y] = [Math.floor(x / TILE_SIZE), Math.floor(y / TILE_SIZE)]
         return game.tiles[x][y].type;

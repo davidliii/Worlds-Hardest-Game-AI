@@ -1,5 +1,6 @@
 /* Editting Methods */
 
+// detects and applies user edits
 function editMain(game) {
     let x = Math.floor(pmouseX / TILE_SIZE);
     let y = Math.floor(pmouseY / TILE_SIZE);

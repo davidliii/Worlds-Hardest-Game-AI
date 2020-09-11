@@ -1,3 +1,5 @@
+/* Tile class */
+
 var TILE_SIZE = 50;
 var TILE_STROKE = 8;
 
@@ -10,7 +12,8 @@ class Tile {
         this.parent;
     }
 
-    getColor() { // returns pair of colors for tile type
+    // returns pair of colors for tile (checkerboard pattern)
+    getColor() {
         if (this.type == 'home' || this.type == 'goal') {
             return ['#B5FEB4', '#B5FEB4'];
         }
@@ -24,7 +27,9 @@ class Tile {
         }
     }
 
-    show() { // draws tile
+
+    // draws tile to canvas
+    show() {
         let colorIdx = (this.x + this.y) % 2 // checkerboard pattern for board tiles
         fill(this.color[colorIdx]);
         noStroke();
@@ -32,7 +37,8 @@ class Tile {
         rect(this.x * TILE_SIZE, this.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
 
-    drawStroke() { // draws outline on the tile
+     // draws outline on the tile
+    drawStroke() {
         strokeWeight(TILE_STROKE);
         stroke(0);
         rectMode(CORNER);
